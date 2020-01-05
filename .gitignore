@@ -1,0 +1,13 @@
+
+
+
+### DotnetCore ###
+**/[Bb]in
+**/[Oo]bj
+
+### Vs Code
+.vscode
+
+
+### macOS ###
+.DS_Store

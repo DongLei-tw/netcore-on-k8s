@@ -1,0 +1,38 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dotnet-app
+  namespace: netcore
+  labels:
+    name: dotnet-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: dotnet-app
+  template:
+    metadata:
+      labels:
+        name: dotnet-app
+    spec:
+      containers:
+        - name: dotnet-app
+          image: localhost:5000/dotnet-app
+          ports:
+            - containerPort: 80
+          imagePullPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dotnet-app
+  namespace: netcore
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    name: dotnet-app
