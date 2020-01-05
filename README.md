@@ -10,9 +10,9 @@
     - switch to `Kubernetes` tap
     - tick `Enable Kubernetes` and wait for a few minutes
 
-# Install MiniKube
+# Install MiniKube （Optional）
 
-With Minikube we can set up and operate a single node Kubernetes cluster as a local development environment.
+With Minikube we can set up and operate a single node Kubernetes cluster as a local development environment. It's optional since we can directly use `docker-desktop` as our local cluster.
 
 Install minikube and kubectl by [Homebrew](https://brew.sh/)
 
@@ -32,7 +32,7 @@ Now Minikube is started and you have created a Kubernetes context called `miniku
  kubectl config use-context minikube
 ```
 
-# Build Asp.NetCore App
+# Build a dotnet core web application
 
 ## Create WebApi project
 
@@ -61,9 +61,7 @@ Visit `http://localhost:5000/WeatherForecast` using browser, there you will get 
 
 ## Dockerize the dotnet core application
 
-Create a docker image for the `dotnet-app` appliction which we just created. Read more about [Docker images for ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/docker/building-net-docker-images).
-
-Create a dockerfile at the root foler. ([Best practices for writing Dockerfiles](https://docs.docker.com/v17.09/engine/userguide/eng-image/dockerfile_best-practices/))
+Create a docker image for the `dotnet-app` appliction which we just created. Please note, in this demo, the docker file was put outside the dotnet app directory).
 
 ``` shell
 touch Dockerfile
@@ -132,11 +130,16 @@ Stop the running container
 docker kill 77855df925bf
 ```
 
+Read more about:
+
+- [Docker images for ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/docker/building-net-docker-images)
+- [Best practices for writing Dockerfiles](https://docs.docker.com/v17.09/engine/userguide/eng-image/dockerfile_best-practices/))
+
 # Setup a local Docker Registry
 
-We are going to use a local [Docker Registry](https://docs.docker.com/registry/) ranther then DockerHub or online registry. So we run our own local Registry by docker. Read more on [Deploy a registry server](https://docs.docker.com/registry/deploying/).
+Since we could not derectly deploy a local docker image to kubernetes, so we are going to use a local [Docker Registry](https://docs.docker.com/registry/) ranther then DockerHub or online registry. We start our own local Registry by docker.
 
-Start the registry container by docker. It will pull the docker registry on public [docker hub](https://hub.docker.com/_/registry?tab=description).
+Start the registry container, it will pull the docker registry on public [docker hub](https://hub.docker.com/_/registry?tab=description).
 
 ```shell
 docker run -d -p 5000:5000 --name registry --restart always registry:2
@@ -176,15 +179,37 @@ Verify the image is pushed.
 curl -X GET http://localhost:5000/v2/dotnet-app/tags/list
 ```
 
-Stop your registry and remove all data once you finished all the practise.
+（Optionnal) Stop your registry and remove all data. Please make sure you finished ALL the demo practices when doing this step.
 
 ``` shell
 docker container stop registry && docker container rm -v registry
 ```
 
+Read more about [Deploy a registry server](https://docs.docker.com/registry/deploying/).
+
 # Deply dotnet app to Kubernetes
 
-Create a namespace in Kubernates.
+## Create a namespace for dotnet app
+
+Firstly, let's switch to `minikube` cluster.
+
+```shell
+# display list of contexts
+kubectl config get-contexts
+
+CURRENT   NAME                 CLUSTER          AUTHINFO         NAMESPACE
+*         docker-desktop       docker-desktop   docker-desktop
+          docker-for-desktop   docker-desktop   docker-desktop
+          minikube             minikube         minikube  
+
+# set the default context
+kubectl config use-context minikube
+
+# display the current-context
+kubectl config current-context
+```
+
+We can create a [namespace](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/) for our application in Kubernates.
 
 ```shell
 kubectl create namespace netcore
@@ -203,7 +228,9 @@ kube-system       Active   24h
 netcore           Active   8s
 ```
 
-Create a kubernetes deployment yaml file for our demo application.
+## Create kubernetes resource description file
+
+Create a kubernetes description [yaml file](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#describing-a-kubernetes-object) for our demo application.
 
 ``` yaml
 ---
@@ -247,14 +274,21 @@ spec:
 
 ```
 
+## Deploy to Kubernetes
+
 Deploy the app to local Kubernetes.
 
 ```shell
-kubectl create -f deployment.yaml
+kubectl create -f deployment.yaml -n netcore
 
-# the output will be
 deployment.extensions/dotnet-app created
 service/dotnet-app created
+```
+
+> (Optional) Note: You can permanently save the namespace for all subsequent kubectl commands in that context. Then you can omit the trailing `"-n netcore"`.
+
+```shell
+kubectl config set-context --current --namespace=netcore
 ```
 
 Now we can verify our deployment.
@@ -268,6 +302,54 @@ dotnet-app   NodePort   10.107.195.245   <none>        80:32531/TCP   115s
 
 The dotnet-app is mapping to port `32531`. Let's visit by localhost address, `http://localhost:32531/WeatherForecast`.
 
+Destroy the deployments when you don't what them anymore.
+
+```shell
+kubectl delete -f deployment.yaml
+```
+
+## Scaling Resources
+
+You can check the running replica pods by
+
+```shell
+kubectl get pods
+
+NAME                         READY   STATUS    RESTARTS   AGE
+dotnet-app-766d8687d-m5r94   1/1     Running   0          18m
+```
+
+At the moment, we have only 1 replica. We can scaling up the replicaset to `3` by
+
+```shell
+kubectl scale --replicas=3  deployment/dotnet-app -n netcore
+```
+
+Then we can see that we get 2 more running pods.
+
+``` shell
+kubectl get pods -n netcore
+NAME                         READY   STATUS    RESTARTS   AGE
+dotnet-app-766d8687d-m5r94   1/1     Running   0          19m
+dotnet-app-766d8687d-7nk68   1/1     Running   0          7s
+dotnet-app-766d8687d-sgw2q   1/1     Running   0          7s
+```
+
+Kubernetes doesn't support stop/pause of current state of pod and resume when needed. However, you can still achieve it by having no working deployments which is setting number of replicas to 0.
+
+```shell
+kubectl scale --replicas=0  deployment/dotnet-app -n netcore
+
+kubectl get pods -n netcore
+No resources found in netcore namespace.
+
+kubectl get deployment -n netcore
+NAME         READY   UP-TO-DATE   AVAILABLE   AGE
+dotnet-app   0/0     0            0           20m
+```
+
+## Some useful cammands
+
 Some use for cammand which can help to dignosise issues:
 
 ``` shell
@@ -278,11 +360,4 @@ kubectl get pods -n yournamespace
 kubectl describe [resource] -n yournamespace
 ```
 
-Also you can permanently save the namespace for all subsequent kubectl commands in that context. Then you can omit the trailing `"-n netcore"`.
-
-```shell
-kubectl config set-context --current --namespace=netcore
-```
-
-Read more at [Kubectl Cheatsheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
-
+Read more about kubectl commands at [Kubectl Cheatsheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
