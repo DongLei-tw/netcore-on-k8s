@@ -32,14 +32,12 @@ Now Minikube is started and you have created a Kubernetes context called `miniku
  kubectl config use-context minikube
 ```
 
-
-
-
 # Build Asp.NetCore App
 
 ## Create WebApi project
 
-Make sure you have `dotnet` installed on your machine already
+Make sure you have `dotnet` installed on your machine already. (Install dotnet-sdk by [homebrew cask](https://formulae.brew.sh/cask/dotnet-sdk#default))
+
 Create a dotnet api application
 
 ```shell
@@ -61,11 +59,11 @@ dotnet run
 
 Visit `http://localhost:5000/WeatherForecast` using browser, there you will get a json response.
 
-## Create docker image
+## Dockerize the dotnet core application
 
-Create a docker image for the `dotnet-app` appliction which we just created.
+Create a docker image for the `dotnet-app` appliction which we just created. Read more about [Docker images for ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/docker/building-net-docker-images).
 
-Create a dockerfile at the root foler
+Create a dockerfile at the root foler. ([Best practices for writing Dockerfiles](https://docs.docker.com/v17.09/engine/userguide/eng-image/dockerfile_best-practices/))
 
 ``` shell
 touch Dockerfile
@@ -98,7 +96,7 @@ Build our docker image with the dockerfile.
 docker build -t dotnet-app .
 ```
 
-Once then image buit, chec the image:
+Once then image buit, check the image:
 
 ``` shell
 docker images
@@ -128,7 +126,7 @@ CONTAINER ID        IMAGE               COMMAND                  CREATED        
 
 Open browser and visit `http://localhost/WeatherForecast`
 
-Stop the running container 
+Stop the running container
 
 ``` shell
 docker kill 77855df925bf
@@ -136,12 +134,19 @@ docker kill 77855df925bf
 
 # Setup a local Docker Registry
 
-We are going to use a local [Docker Registry](https://docs.docker.com/registry/) ranther then DockerHub or online registry. So we run our own local Registry by docker.
+We are going to use a local [Docker Registry](https://docs.docker.com/registry/) ranther then DockerHub or online registry. So we run our own local Registry by docker. Read more on [Deploy a registry server](https://docs.docker.com/registry/deploying/).
 
-Start the registry container by docker
+Start the registry container by docker. It will pull the docker registry on public [docker hub](https://hub.docker.com/_/registry?tab=description).
 
 ```shell
 docker run -d -p 5000:5000 --name registry --restart always registry:2
+```
+
+We can see the docker rigistry is runing at localhost with port 5000.
+
+```shell
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                    NAMES
+448aa1396778        registry:2          "/entrypoint.sh /etc…"   1 minute ago        Up 1 minute         0.0.0.0:5000->5000/tcp   registry
 ```
 
 Tag our docker image with an additional tag – local repository address.
