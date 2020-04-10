@@ -10,7 +10,7 @@
     - switch to `Kubernetes` tap
     - tick `Enable Kubernetes` and wait for a few minutes
 
-# Install MiniKube （Optional）
+# Install MiniKube (Optional)
 
 With Minikube we can set up and operate a single node Kubernetes cluster as a local development environment. It's optional since we can directly use `docker-desktop` as our local cluster.
 
@@ -161,7 +161,7 @@ docker tag dotnet-app localhost:5000/dotnet-app
 Check the images, we see that we get an another `dotnet-app` image named `localhost:5000/dotnet-app`.
 
 ``` shell
-docker iamges
+docker images
 REPOSITORY                             TAG                 IMAGE ID            CREATED             SIZE
 dotnet-app                             latest              26bae748895f        25 minutes ago      208MB
 localhost:5000/dotnet-app              latest              26bae748895f        25 minutes ago      208MB
@@ -179,7 +179,7 @@ Verify the image is pushed.
 curl -X GET http://localhost:5000/v2/dotnet-app/tags/list
 ```
 
-（Optionnal) Stop your registry and remove all data. Please make sure you finished ALL the demo practices when doing this step.
+(Optionnal) Stop your registry and remove all data. Please make sure you finished ALL the demo practices when doing this step.
 
 ``` shell
 docker container stop registry && docker container rm -v registry
@@ -200,7 +200,7 @@ kubectl config get-contexts
 CURRENT   NAME                 CLUSTER          AUTHINFO         NAMESPACE
 *         docker-desktop       docker-desktop   docker-desktop
           docker-for-desktop   docker-desktop   docker-desktop
-          minikube             minikube         minikube  
+          minikube             minikube         minikube
 
 # set the default context
 kubectl config use-context minikube
