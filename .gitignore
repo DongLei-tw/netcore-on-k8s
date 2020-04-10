@@ -4,6 +4,7 @@
 ### DotnetCore ###
 **/[Bb]in
 **/[Oo]bj
+**/out
 
 ### Vs Code
 .vscode
@@ -11,3 +12,6 @@
 
 ### macOS ###
 .DS_Store
+
+### IDE ###
+.idea/
